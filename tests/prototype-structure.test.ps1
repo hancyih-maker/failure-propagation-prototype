@@ -26,6 +26,9 @@ Assert-Contains $js 'mistakeCaseNamesForModule' "app.js should display mistake c
 Assert-Contains $js 'activeMistakeKey' "app.js should track the selected saved mistake"
 Assert-Contains $js 'editMistakeCase' "app.js should support editing saved mistake cases"
 Assert-Contains $js 'activeDownstreamLabelsForModule' "app.js should show active mistake downstream labels on module cards"
+Assert-Contains $js 'relationInfluence' "block-level annotations should display each relation influence text"
+Assert-Contains $js 'source-label-strip' "source block should render first-level label with the same strip style as downstream blocks"
+Assert-Contains $css '.taxonomy-influence' "styles.css should style influence text on block-level annotations"
 Assert-Contains $js 'targetSecondLevel' "app.js should store second-level target label"
 Assert-Contains $js 'sourceScope' "app.js should store source scope label"
 Assert-Contains $js 'targetScope' "app.js should store target scope label"
@@ -51,6 +54,7 @@ Assert-Contains $css ".manual-relation" "styles.css should style manual relation
 Assert-Contains $css ".relation-card" "styles.css should style saved relation cards"
 Assert-Contains $css ".affected-target-row" "styles.css should style multiple affected target rows"
 Write-Output "manual-first annotation canvas checks passed"
+
 
 
 

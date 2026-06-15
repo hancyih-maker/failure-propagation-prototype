@@ -118,3 +118,4 @@ h2 { margin-bottom: 6px; font-size: 18px; }
 
 
 
+.taxonomy-influence { display: block; margin-top: 6px; padding-top: 5px; border-top: 1px solid var(--soft-line); color: var(--muted); font-style: normal; font-size: 11px; line-height: 1.35; }
