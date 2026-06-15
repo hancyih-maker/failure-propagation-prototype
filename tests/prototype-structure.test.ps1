@@ -27,9 +27,13 @@ Assert-Contains $js 'activeMistakeKey' "app.js should track the selected saved m
 Assert-Contains $js 'editMistakeCase' "app.js should support editing saved mistake cases"
 Assert-Contains $js 'activeDownstreamLabelsForModule' "app.js should show active mistake downstream labels on module cards"
 Assert-Contains $js 'relationInfluence' "block-level annotations should display each relation influence text"
+Assert-Contains $js 'blockAnnotationsForModule' "block annotations should merge source and downstream labels for selected mistake"
+Assert-Contains $js 'appendBlockAnnotation(groups' "block annotations should deduplicate source and downstream cards"
+Assert-Contains $js 'if (!activeMistakeKey) return [];' "block annotations should only show selected mistake details"
+Assert-Contains $js 'relationInfluences' "merged block annotations should keep all relation influence texts"
+Assert-Contains $js 'sourcePointKey' "merged block annotations should still expose source anchors for relation lines"
+Assert-Contains $js 'targetPointKey' "merged block annotations should still expose target anchors for relation lines"
 Assert-Contains $js 'source-label-strip' "source block should render first-level label with the same strip style as downstream blocks"
-Assert-Contains $js "function sourceAnnotationsForModule(id) {`r`n  if (!activeMistakeKey) return [];" "source annotations should only show selected mistake details"
-Assert-Contains $js 'relationsForMistakeKey(activeMistakeKey)' "source annotations should use the selected mistake relation chain"
 Assert-Contains $css '.taxonomy-influence' "styles.css should style influence text on block-level annotations"
 Assert-Contains $js 'targetSecondLevel' "app.js should store second-level target label"
 Assert-Contains $js 'sourceScope' "app.js should store source scope label"
@@ -56,6 +60,8 @@ Assert-Contains $css ".manual-relation" "styles.css should style manual relation
 Assert-Contains $css ".relation-card" "styles.css should style saved relation cards"
 Assert-Contains $css ".affected-target-row" "styles.css should style multiple affected target rows"
 Write-Output "manual-first annotation canvas checks passed"
+
+
 
 
 

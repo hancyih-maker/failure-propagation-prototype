@@ -317,40 +317,69 @@ function deleteRelation(id) {
   renderAll();
 }
 
-function sourceAnnotationsForModule(id) {
-  if (!activeMistakeKey) return [];
-  const seen = new Set();
-  return relationsForMistakeKey(activeMistakeKey)
-    .filter((relation) => relation.sourceModuleId === id)
-    .map((relation) => ({
-      pointKey: taxonomyPointKey(relation.sourceModuleId, relation.sourceFirstLevel, relation.sourceSecondLevel, relation.sourceScope),
-      firstLevel: relation.sourceFirstLevel,
-      secondLevel: relation.sourceSecondLevel,
-      scope: relation.sourceScope,
-      relationInfluence: relation.influence,
-    }))
-    .filter((item) => {
-      if (seen.has(item.pointKey)) return false;
-      seen.add(item.pointKey);
-      return true;
+function appendBlockAnnotation(groups, annotation) {
+  const key = annotation.pointKey;
+  if (!groups.has(key)) {
+    groups.set(key, {
+      pointKey: key,
+      sourcePointKey: "",
+      targetPointKey: "",
+      firstLevel: annotation.firstLevel,
+      secondLevel: annotation.secondLevel,
+      scope: annotation.scope,
+      relationInfluences: [],
     });
+  }
+  const item = groups.get(key);
+  if (annotation.sourcePointKey) item.sourcePointKey = annotation.sourcePointKey;
+  if (annotation.targetPointKey) item.targetPointKey = annotation.targetPointKey;
+  if (annotation.relationInfluence && !item.relationInfluences.includes(annotation.relationInfluence)) {
+    item.relationInfluences.push(annotation.relationInfluence);
+  }
 }
 
+function blockAnnotationsForModule(id) {
+  if (!activeMistakeKey) return [];
+  const groups = new Map();
+  relationsForMistakeKey(activeMistakeKey).forEach((relation) => {
+    const sourcePointKey = taxonomyPointKey(relation.sourceModuleId, relation.sourceFirstLevel, relation.sourceSecondLevel, relation.sourceScope);
+    const targetPointKey = taxonomyPointKey(relation.targetModuleId, relation.targetFirstLevel, relation.targetSecondLevel, relation.targetScope);
+    if (relation.sourceModuleId === id) {
+      appendBlockAnnotation(groups, {
+        pointKey: sourcePointKey,
+        sourcePointKey,
+        firstLevel: relation.sourceFirstLevel,
+        secondLevel: relation.sourceSecondLevel,
+        scope: relation.sourceScope,
+        relationInfluence: relation.influence,
+      });
+    }
+    if (relation.targetModuleId === id) {
+      appendBlockAnnotation(groups, {
+        pointKey: targetPointKey,
+        targetPointKey,
+        firstLevel: relation.targetFirstLevel,
+        secondLevel: relation.targetSecondLevel,
+        scope: relation.targetScope,
+        relationInfluence: relation.influence,
+      });
+    }
+  });
+  return [...groups.values()];
+}
 function renderStages() {
   stageLayer.innerHTML = stages.map((stage) => {
     const cards = modules.filter((item) => item.stage === stage.id).map((item) => {
-      const sourceAnnotations = sourceAnnotationsForModule(item.id);
+      const blockAnnotations = blockAnnotationsForModule(item.id);
       const caseNames = mistakeCaseNamesForModule(item.id);
-      const downstreamTaxonomy = activeDownstreamTaxonomyForModule(item.id);
       return `
         <article class="module-card ${item.id === selectedModuleId ? "is-selected" : ""}" data-module-id="${item.id}">
           <button class="module-main-button" type="button" data-module-select="${item.id}">
             <span class="module-title">${escapeHtml(item.title)}</span>
             <span class="module-meta">${escapeHtml(item.hint)}</span>
-            ${sourceAnnotations.length ? `<span class="source-label-strip">${sourceAnnotations.map((item) => `<span class="downstream-taxonomy-item taxonomy-chain source-taxonomy-item" data-source-point="${escapeHtml(item.pointKey)}">${badge(item.firstLevel)}<strong>${escapeHtml(item.secondLevel)}</strong>${escapeHtml(item.scope || "Scope not set")}${item.relationInfluence ? `<em class="taxonomy-influence">${escapeHtml(item.relationInfluence)}</em>` : ""}</span>`).join("")}</span>` : ""}
+            ${blockAnnotations.length ? `<span class="downstream-label-strip">${blockAnnotations.map((item) => `<span class="downstream-taxonomy-item taxonomy-chain" ${item.sourcePointKey ? `data-source-point="${escapeHtml(item.sourcePointKey)}"` : ""} ${item.targetPointKey ? `data-target-point="${escapeHtml(item.targetPointKey)}"` : ""}>${badge(item.firstLevel)}<strong>${escapeHtml(item.secondLevel)}</strong>${escapeHtml(item.scope || "Scope not set")}${item.relationInfluences.map((text) => `<em class="taxonomy-influence">${escapeHtml(text)}</em>`).join("")}</span>`).join("")}</span>` : ""}
           </button>
           ${caseNames.length ? `<span class="case-name-list">${caseNames.map((name) => `<button type="button" data-edit-mistake="${escapeHtml(mistakeKey(item.id, name))}">${escapeHtml(name)}</button>`).join("")}</span>` : ""}
-          ${downstreamTaxonomy.length ? `<span class="downstream-label-strip">${downstreamTaxonomy.map((item) => `<span class="downstream-taxonomy-item taxonomy-chain" data-target-point="${escapeHtml(item.pointKey)}">${badge(item.firstLevel)}<strong>${escapeHtml(item.secondLevel)}</strong>${escapeHtml(item.scope || "Scope not set")}${item.relationInfluence ? `<em class="taxonomy-influence">${escapeHtml(item.relationInfluence)}</em>` : ""}</span>`).join("")}</span>` : ""}
         </article>
       `;
     }).join("");
@@ -711,46 +740,32 @@ function buildStandaloneH5() {
     function labelClass(label) { return { "Critical Error": "severity-critical", Error: "severity-error", Warning: "severity-warning", Informational: "severity-info" }[label] || "dimension-badge"; }
     function badge(label, extraClass) { return "<span class=\"badge " + labelClass(label) + " " + (extraClass || "") + "\">" + esc(label) + "</span>"; }
 
-    function sourceAnnotationsForModule(id) {
-      if (!activeMistakeKey) return [];
-      var seen = new Set();
-      return relationsForMistakeKey(activeMistakeKey).filter(function(relation) {
-        return relation.sourceModuleId === id;
-      }).map(function(relation) {
-        return {
-          pointKey: taxonomyPointKey(relation.sourceModuleId, relation.sourceFirstLevel, relation.sourceSecondLevel, relation.sourceScope),
-          firstLevel: relation.sourceFirstLevel,
-          secondLevel: relation.sourceSecondLevel,
-          scope: relation.sourceScope,
-          relationInfluence: relation.influence,
-        };
-      }).filter(function(item) {
-        if (seen.has(item.pointKey)) return false;
-        seen.add(item.pointKey);
-        return true;
-      });
+    function appendBlockAnnotation(groups, annotation) {
+      var key = annotation.pointKey;
+      if (!groups.has(key)) {
+        groups.set(key, { pointKey: key, sourcePointKey: "", targetPointKey: "", firstLevel: annotation.firstLevel, secondLevel: annotation.secondLevel, scope: annotation.scope, relationInfluences: [] });
+      }
+      var item = groups.get(key);
+      if (annotation.sourcePointKey) item.sourcePointKey = annotation.sourcePointKey;
+      if (annotation.targetPointKey) item.targetPointKey = annotation.targetPointKey;
+      if (annotation.relationInfluence && item.relationInfluences.indexOf(annotation.relationInfluence) === -1) item.relationInfluences.push(annotation.relationInfluence);
     }
 
-    function activeDownstreamTaxonomyForModule(id) {
+    function blockAnnotationsForModule(id) {
       if (!activeMistakeKey) return [];
-      var seen = new Set();
-      return relationsForMistakeKey(activeMistakeKey).filter(function(relation) {
-        return relation.targetModuleId === id;
-      }).map(function(relation) {
-        return {
-          pointKey: taxonomyPointKey(relation.targetModuleId, relation.targetFirstLevel, relation.targetSecondLevel, relation.targetScope),
-          firstLevel: relation.targetFirstLevel,
-          secondLevel: relation.targetSecondLevel,
-          scope: relation.targetScope,
-          relationInfluence: relation.influence,
-        };
-      }).filter(function(item) {
-        if (seen.has(item.pointKey)) return false;
-        seen.add(item.pointKey);
-        return true;
+      var groups = new Map();
+      relationsForMistakeKey(activeMistakeKey).forEach(function(relation) {
+        var sourcePointKey = taxonomyPointKey(relation.sourceModuleId, relation.sourceFirstLevel, relation.sourceSecondLevel, relation.sourceScope);
+        var targetPointKey = taxonomyPointKey(relation.targetModuleId, relation.targetFirstLevel, relation.targetSecondLevel, relation.targetScope);
+        if (relation.sourceModuleId === id) {
+          appendBlockAnnotation(groups, { pointKey: sourcePointKey, sourcePointKey: sourcePointKey, firstLevel: relation.sourceFirstLevel, secondLevel: relation.sourceSecondLevel, scope: relation.sourceScope, relationInfluence: relation.influence });
+        }
+        if (relation.targetModuleId === id) {
+          appendBlockAnnotation(groups, { pointKey: targetPointKey, targetPointKey: targetPointKey, firstLevel: relation.targetFirstLevel, secondLevel: relation.targetSecondLevel, scope: relation.targetScope, relationInfluence: relation.influence });
+        }
       });
+      return Array.from(groups.values());
     }
-
     function mistakeCaseEntriesForModule(id) {
       var seen = new Set();
       return rootRelationsForSource(id).map(function(relation) {
@@ -769,21 +784,16 @@ function buildStandaloneH5() {
       activeRelations.forEach(function(relation) { linkedIds.add(relation.sourceModuleId); linkedIds.add(relation.targetModuleId); });
       stageLayer.innerHTML = data.stages.map(function(stage) {
         var cards = data.modules.filter(function(item) { return item.stage === stage.id; }).map(function(item) {
-          var sourceAnnotations = sourceAnnotationsForModule(item.id);
+          var blockAnnotations = blockAnnotationsForModule(item.id);
           var caseEntries = mistakeCaseEntriesForModule(item.id);
-          var downstreamTaxonomy = activeDownstreamTaxonomyForModule(item.id);
-          var sourceHtml = sourceAnnotations.length ? "<span class=\"source-label-strip\">" + sourceAnnotations.map(function(annotation) {
-            var relationInfluence = annotation.relationInfluence ? "<em class=\"taxonomy-influence\">" + esc(annotation.relationInfluence) + "</em>" : "";
-            return "<span class=\"downstream-taxonomy-item taxonomy-chain source-taxonomy-item\" data-source-point=\"" + esc(annotation.pointKey) + "\">" + badge(annotation.firstLevel) + "<strong>" + esc(annotation.secondLevel) + "</strong>" + esc(annotation.scope || "Scope not set") + relationInfluence + "</span>";
+          var caseHtml = caseEntries.length ? "<span class=\"case-name-list\">" + caseEntries.map(function(entry) { return "<button type=\"button\" class=\"" + (entry.key === activeMistakeKey ? "is-active" : "") + "\" data-edit-mistake=\"" + esc(entry.key) + "\">" + esc(entry.name) + "</button>"; }).join("") + "</span>" : "";
+          var annotationHtml = blockAnnotations.length ? "<span class=\"downstream-label-strip\">" + blockAnnotations.map(function(annotation) {
+            var sourceAttr = annotation.sourcePointKey ? " data-source-point=\"" + esc(annotation.sourcePointKey) + "\"" : "";
+            var targetAttr = annotation.targetPointKey ? " data-target-point=\"" + esc(annotation.targetPointKey) + "\"" : "";
+            var relationInfluences = annotation.relationInfluences.map(function(text) { return "<em class=\"taxonomy-influence\">" + esc(text) + "</em>"; }).join("");
+            return "<span class=\"downstream-taxonomy-item taxonomy-chain\"" + sourceAttr + targetAttr + ">" + badge(annotation.firstLevel) + "<strong>" + esc(annotation.secondLevel) + "</strong>" + esc(annotation.scope || "Scope not set") + relationInfluences + "</span>";
           }).join("") + "</span>" : "";
-          var caseHtml = caseEntries.length ? "<span class=\"case-name-list\">" + caseEntries.map(function(entry) {
-            return "<button type=\"button\" class=\"" + (entry.key === activeMistakeKey ? "is-active" : "") + "\" data-edit-mistake=\"" + esc(entry.key) + "\">" + esc(entry.name) + "</button>";
-          }).join("") + "</span>" : "";
-          var downstreamHtml = downstreamTaxonomy.length ? "<span class=\"downstream-label-strip\">" + downstreamTaxonomy.map(function(annotation) {
-            var relationInfluence = annotation.relationInfluence ? "<em class=\"taxonomy-influence\">" + esc(annotation.relationInfluence) + "</em>" : "";
-            return "<span class=\"downstream-taxonomy-item taxonomy-chain\" data-target-point=\"" + esc(annotation.pointKey) + "\">" + badge(annotation.firstLevel) + "<strong>" + esc(annotation.secondLevel) + "</strong>" + esc(annotation.scope || "Scope not set") + relationInfluence + "</span>";
-          }).join("") + "</span>" : "";
-          return "<article class=\"module-card " + (item.id === activeRoot ? "is-selected" : "") + " " + (linkedIds.has(item.id) ? "is-linked" : "") + "\" data-module-id=\"" + esc(item.id) + "\"><button class=\"module-main-button\" type=\"button\"><span class=\"module-title\">" + esc(item.title) + "</span><span class=\"module-meta\">" + esc(item.hint) + "</span>" + sourceHtml + "</button>" + caseHtml + downstreamHtml + "</article>";
+          return "<article class=\"module-card " + (item.id === activeRoot ? "is-selected" : "") + " " + (linkedIds.has(item.id) ? "is-linked" : "") + "\" data-module-id=\"" + esc(item.id) + "\"><button class=\"module-main-button\" type=\"button\"><span class=\"module-title\">" + esc(item.title) + "</span><span class=\"module-meta\">" + esc(item.hint) + "</span>" + annotationHtml + "</button>" + caseHtml + "</article>";
         }).join("");
         return "<article class=\"stage-column\"><h3>" + esc(stage.title) + "</h3><div class=\"module-list\">" + cards + "</div></article>";
       }).join("");
@@ -865,6 +875,11 @@ exportButton.addEventListener("click", exportJson);
 exportH5Button.addEventListener("click", exportH5);
 clearButton.addEventListener("click", clearAll);
 renderAll();
+
+
+
+
+
 
 
 
