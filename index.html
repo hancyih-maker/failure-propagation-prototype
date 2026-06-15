@@ -1,0 +1,83 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manual Behaviour Mistake Annotation Canvas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Manual annotation canvas</p>
+      <h1>Behaviour Mistake Relation Builder</h1>
+      <p class="summary">The board only provides execution modules. You manually decide which behaviour mistake affects which later module, and manually assign first-level and second-level labels.</p>
+    </div>
+    <div class="mode-card">
+      <span>Principle</span>
+      <strong>No pre-labelled errors</strong>
+    </div>
+  </header>
+
+  <main class="app-layout">
+    <section class="board-shell" aria-labelledby="board-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="board-title">Execution Blocks</h2>
+          <p>Click a small module, then manually add downstream error relations from it.</p>
+        </div>
+      </div>
+      <div id="module-board" class="module-board">
+        <svg id="relation-layer" class="relation-layer" aria-hidden="true"></svg>
+        <div id="stage-layer" class="stage-layer"></div>
+      </div>
+    </section>
+
+    <aside class="manual-shell" aria-labelledby="manual-title">
+      <div class="section-heading compact">
+        <div>
+          <h2 id="manual-title">Manual Annotation Panel</h2>
+          <p>Choose the downstream target and both taxonomy levels yourself.</p>
+        </div>
+      </div>
+      <div id="manual-panel" class="manual-panel"></div>
+    </aside>
+
+    <section class="relation-shell" aria-labelledby="relation-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="relation-title">Annotated Error Relations</h2>
+          <p>Only relations you manually save appear here and on the board.</p>
+        </div>
+        <div class="action-row">
+          <button id="export-json" class="secondary-button" type="button">Export JSON</button>
+          <button id="export-h5" class="secondary-button" type="button">Export H5</button>
+          <button id="clear-all" class="danger-button" type="button">Clear all</button>
+        </div>
+      </div>
+      <div id="relation-view" class="relation-view"></div>
+      <textarea id="json-output" class="json-output" readonly aria-label="Exported JSON"></textarea>
+    </section>
+
+    <section class="taxonomy-shell" aria-labelledby="taxonomy-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="taxonomy-title">Label Reference</h2>
+          <p>First level describes failure severity. Second level describes behaviour dimension.</p>
+        </div>
+      </div>
+      <div class="taxonomy-grid">
+        <article><h3>First Level</h3><p>Critical Error, Error, Warning, Informational.</p></article>
+        <article><h3>Coordinator Dimensions</h3><p>Task Planning, Coordination, Progress Management.</p></article>
+        <article><h3>Expert Dimensions</h3><p>Task Understanding, Task Execution, Result Communication.</p></article>
+        <article><h3>Relation</h3><p>Source mistake → downstream block annotation is created manually.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js?v=20260615-h5-css-fallback"></script>
+</body>
+</html>
+
+
+
