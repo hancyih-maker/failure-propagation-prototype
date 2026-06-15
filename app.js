@@ -318,8 +318,10 @@ function deleteRelation(id) {
 }
 
 function sourceAnnotationsForModule(id) {
+  if (!activeMistakeKey) return [];
   const seen = new Set();
-  return relationsForSource(id)
+  return relationsForMistakeKey(activeMistakeKey)
+    .filter((relation) => relation.sourceModuleId === id)
     .map((relation) => ({
       pointKey: taxonomyPointKey(relation.sourceModuleId, relation.sourceFirstLevel, relation.sourceSecondLevel, relation.sourceScope),
       firstLevel: relation.sourceFirstLevel,
@@ -710,8 +712,11 @@ function buildStandaloneH5() {
     function badge(label, extraClass) { return "<span class=\"badge " + labelClass(label) + " " + (extraClass || "") + "\">" + esc(label) + "</span>"; }
 
     function sourceAnnotationsForModule(id) {
+      if (!activeMistakeKey) return [];
       var seen = new Set();
-      return relationsForSource(id).map(function(relation) {
+      return relationsForMistakeKey(activeMistakeKey).filter(function(relation) {
+        return relation.sourceModuleId === id;
+      }).map(function(relation) {
         return {
           pointKey: taxonomyPointKey(relation.sourceModuleId, relation.sourceFirstLevel, relation.sourceSecondLevel, relation.sourceScope),
           firstLevel: relation.sourceFirstLevel,
@@ -860,6 +865,7 @@ exportButton.addEventListener("click", exportJson);
 exportH5Button.addEventListener("click", exportH5);
 clearButton.addEventListener("click", clearAll);
 renderAll();
+
 
 
 
